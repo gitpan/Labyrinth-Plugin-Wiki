@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 use vars qw($VERSION);
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 =head1 NAME
 
@@ -101,9 +101,9 @@ sub InitLinkPatterns {
   my $AnyString   = '[A-Za-z\xc0-\xff_0-9 \-\&\'~.,\?\(\)\"!\$:\/]';
 
   # Main link pattern: lowercase between uppercase, then anything
-  my $LpA = $UpperLetter . $AnyLetter . "*";
-  my $LpB = $AnyLetter   . $AnyString . "*";
-  my $LpC = $AnyLetter                . "*" . ':' . $LpB;
+  my $LpA = $UpperLetter . $AnyLetter . '*';
+  my $LpB = $AnyLetter   . $AnyString . '*';
+  my $LpC = $AnyLetter                . '*:' . $AnyString . '*';
 
   $LinkPattern = qr!\[\[($LpA|$LpC)\]\]!;
   $SitePattern = qr!\[\[($LpA|$LpC)\|($LpB)\]\]!;
@@ -168,7 +168,7 @@ sub Wiki2HTML {
         if($code eq 'pre') {
             s!^\s*$!<br />\n!;  # Blank lines become new lines
         } else {
-            s!^\s*$!<p>\n!;     # Blank lines become new paragraphs
+            s!^\s*$!<p>!;     # Blank lines become new paragraphs
         }
         $html .= CommonMarkup($_, $parse);
     }
@@ -176,8 +176,18 @@ sub Wiki2HTML {
         $html .= '</' . pop(@stack) . ">\n";
     }
 
-    $html =~ s/(\s|<p>)*<p>\s*/\n<p>\n/gs;     # multiple blank lines fold into one.
-    $html =~ s/\s*<p>\s*<(ul|ol|h[1-6]|pre)/\n<$1/gs;     # remove unnecessary <p>'s.
+    $html = process_html($html,0,1);
+
+#    $html =~ s!<p>(.*?)\s*<(ul|ol|h[1-6]|pre|p)>!<p>$1</p>\n<$2>!gs;    # close <p>'s.
+#    $html =~ s!<p>(.*?)\s*$!<p>$1</p>!gs;               # close final <p>.
+#    $html =~ s!\s*</p>\s*</p>!</p>!gs;                  # remove extra close paragraphs
+#    $html =~ s!<p>\s*</p>!!gs;                          # remove black paragraphs
+#    $html =~ s/(\s|<p>)*<p>\s*/\n<p>/gs;                # multiple blank lines fold into one.
+#    $html =~ s/\s*<p>\s*<(ul|ol|h[1-6]|pre)/\n<$1/gs;   # remove unnecessary <p>'s.
+#    $html =~ s!([^>\s]+)\s*<p>!$1</p>\n<p>!gs;          # close paragraphs.
+#    $html =~ s!\s*</p>\s*<p!</p>\n<p!gs;                # separate paragraphs for readability.
+
+    LogDebug("html=[$html]");
     return $html;
 }
 
@@ -336,7 +346,7 @@ Miss Barbell Productions, L<http://www.missbarbell.co.uk/>
 
 =head1 COPYRIGHT & LICENSE
 
-  Copyright (C) 2002-2012 Barbie for Miss Barbell Productions
+  Copyright (C) 2008-2013 Barbie for Miss Barbell Productions
   All Rights Reserved.
 
   This module is free software; you can redistribute it and/or
